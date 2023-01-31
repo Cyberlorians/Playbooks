@@ -1,0 +1,214 @@
+{
+    "$schema":  "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion":  "1.0.0.0",
+    "parameters":  {
+        "PlaybookName":  {
+            "defaultValue":  "localguestcustomext",
+            "type":  "string"
+        }
+    },
+    "variables":  {
+    },
+    "resources":  [
+        {
+            "properties":  {
+                "provisioningState":  "Succeeded",
+                "state":  "Enabled",
+                "definition":  {
+                    "$schema":  "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+                    "contentVersion":  "1.0.0.0",
+                    "parameters":  {
+                    },
+                    "triggers":  {
+                        "manual":  {
+                            "type":  "Request",
+                            "kind":  "Http",
+                            "inputs":  {
+                                "schema":  {
+                                    "properties":  {
+                                        "AccessPackageAssignmentId":  {
+                                            "type":  "string"
+                                        },
+                                        "AccessPackageAssignmentRequestId":  {
+                                            "type":  "string"
+                                        },
+                                        "AccessPackageId":  {
+                                            "type":  "string"
+                                        },
+                                        "AccessPackageName":  {
+                                            "type":  "string"
+                                        },
+                                        "AccessPackagePolicyId":  {
+                                            "type":  "string"
+                                        },
+                                        "AccessPackagePolicyName":  {
+                                            "type":  "string"
+                                        },
+                                        "CatalogId":  {
+                                            "type":  "string"
+                                        },
+                                        "CatalogName":  {
+                                            "type":  "string"
+                                        },
+                                        "ConnectedOrganizationName":  {
+                                            "type":  "string"
+                                        },
+                                        "Event":  {
+                                            "type":  "string"
+                                        },
+                                        "RequestCreatedDateTime":  {
+                                            "type":  "string"
+                                        },
+                                        "TargetDisplayName":  {
+                                            "type":  "string"
+                                        },
+                                        "TargetEmail":  {
+                                            "type":  "string"
+                                        },
+                                        "TargetId":  {
+                                            "type":  "string"
+                                        }
+                                    },
+                                    "type":  "object"
+                                }
+                            },
+                            "operationOptions":  "IncludeAuthorizationHeadersInOutputs"
+                        }
+                    },
+                    "actions":  {
+                        "Condition":  {
+                            "actions":  {
+                                "Condition_2":  {
+                                    "actions":  {
+                                        "HTTP":  {
+                                            "runAfter":  {
+                                            },
+                                            "type":  "Http",
+                                            "inputs":  {
+                                                "authentication":  {
+                                                    "audience":  "https://graph.microsoft.com/",
+                                                    "clientId":  "EnterClientID",
+                                                    "secret":  "EnterSecret",
+                                                    "tenant":  "EnterTenantID",
+                                                    "type":  "ActiveDirectoryOAuth"
+                                                },
+                                                "body":  {
+                                                    "inviteRedirectUrl":  "https://myapps.microsoft.com?@{variables('TenantName')[1]}",
+                                                    "invitedUser":  {
+                                                        "id":  "@{triggerBody()?['TargetId']}"
+                                                    },
+                                                    "invitedUserEmailAddress":  "@{triggerBody()?['TargetEmail']}",
+                                                    "sendInvitationMessage":  false
+                                                },
+                                                "method":  "POST",
+                                                "uri":  "https://graph.microsoft.com/v1.0/invitations"
+                                            }
+                                        }
+                                    },
+                                    "runAfter":  {
+                                    },
+                                    "expression":  {
+                                        "and":  [
+                                            {
+                                                "equals":  [
+                                                    "@triggerBody()?['Event']",
+                                                    "AssignmentRequestCreated"
+                                                ]
+                                            }
+                                        ]
+                                    },
+                                    "type":  "If"
+                                }
+                            },
+                            "runAfter":  {
+                                "Initialize_variable":  [
+                                    "Succeeded"
+                                ]
+                            },
+                            "expression":  {
+                                "and":  [
+                                    {
+                                        "equals":  [
+                                            "@{triggerBody()?['CatalogId']}",
+                                            "9cf0b709-fddd-451c-95fd-cb9b457c633c"
+                                        ]
+                                    }
+                                ]
+                            },
+                            "type":  "If"
+                        },
+                        "Initialize_variable":  {
+                            "runAfter":  {
+                            },
+                            "type":  "InitializeVariable",
+                            "inputs":  {
+                                "variables":  [
+                                    {
+                                        "name":  "TenantName",
+                                        "type":  "array",
+                                        "value":  "@split(triggerBody()?['TargetEmail'],'@')"
+                                    }
+                                ]
+                            }
+                        }
+                    },
+                    "outputs":  {
+                    }
+                },
+                "parameters":  {
+                },
+                "accessControl":  {
+                    "triggers":  {
+                        "openAuthenticationPolicies":  {
+                            "policies":  {
+                                "AzureADEntitlementManagementAuthPolicy":  {
+                                    "type":  "AAD",
+                                    "claims":  [
+                                        {
+                                            "name":  "iss",
+                                            "value":  "https://sts.windows.net/1daa4fd5-b537-46b2-b92b-556628c922ed/"
+                                        },
+                                        {
+                                            "name":  "aud",
+                                            "value":  "28082b26-e45f-4319-9ed9-3245c31eb641"
+                                        },
+                                        {
+                                            "name":  "appid",
+                                            "value":  "810dcf14-1858-4bf2-8134-4c369fa3235b"
+                                        }
+                                    ]
+                                },
+                                "AzureADEntitlementManagementAuthPolicyV2App":  {
+                                    "type":  "AAD",
+                                    "claims":  [
+                                        {
+                                            "name":  "iss",
+                                            "value":  "https://login.microsoftonline.com/1daa4fd5-b537-46b2-b92b-556628c922ed/v2.0"
+                                        },
+                                        {
+                                            "name":  "aud",
+                                            "value":  "28082b26-e45f-4319-9ed9-3245c31eb641"
+                                        },
+                                        {
+                                            "name":  "azp",
+                                            "value":  "810dcf14-1858-4bf2-8134-4c369fa3235b"
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "name":  "[parameters('PlaybookName')]",
+            "type":  "Microsoft.Logic/workflows",
+            "location":  "[resourceGroup().location]",
+            "tags":  {
+                "Purpose":  "Azure AD Entitlement Management"
+            },
+            "apiVersion":  "2017-07-01",
+            "dependsOn":  [
+            ]
+        }
+    ]
+}

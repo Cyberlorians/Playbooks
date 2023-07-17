@@ -1,0 +1,292 @@
+{
+    "$schema":  "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion":  "1.0.0.0",
+    "metadata":  {
+        "title":  "",
+        "description":  "",
+        "prerequisites":  "",
+        "postDeployment":  [
+        ],
+        "prerequisitesDeployTemplateFile":  "",
+        "lastUpdateTime":  "",
+        "entities":  [
+        ],
+        "tags":  [
+        ],
+        "support":  {
+            "tier":  "community",
+            "armtemplate":  "Generated from https://github.com/Azure/Azure-Sentinel/tree/master/Tools/Playbook-ARM-Template-Generator"
+        },
+        "author":  {
+            "name":  ""
+        }
+    },
+    "parameters":  {
+        "PlaybookName":  {
+            "defaultValue":  "MDETVM",
+            "type":  "string"
+        }
+    },
+    "variables":  {
+        "AzureloganalyticsdatacollectorConnectionName":  "[concat('Azureloganalyticsdatacollector-', parameters('PlaybookName'))]"
+    },
+    "resources":  [
+        {
+            "properties":  {
+                "provisioningState":  "Succeeded",
+                "state":  "Enabled",
+                "definition":  {
+                    "$schema":  "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+                    "contentVersion":  "1.0.0.0",
+                    "parameters":  {
+                        "$connections":  {
+                            "defaultValue":  {
+                            },
+                            "type":  "Object"
+                        }
+                    },
+                    "triggers":  {
+                        "Recurrence":  {
+                            "recurrence":  {
+                                "frequency":  "Day",
+                                "interval":  1
+                            },
+                            "evaluatedRecurrence":  {
+                                "frequency":  "Day",
+                                "interval":  1
+                            },
+                            "type":  "Recurrence"
+                        }
+                    },
+                    "actions":  {
+                        "HTTP":  {
+                            "runAfter":  {
+                                "Initialize_variable_for_custom_table_name":  [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type":  "Http",
+                            "inputs":  {
+                                "authentication":  {
+                                    "audience":  "https://api-gcc.securitycenter.microsoft.us",
+                                    "type":  "ManagedServiceIdentity"
+                                },
+                                "method":  "GET",
+                                "uri":  "https://api-gcc.securitycenter.microsoft.us/api/machines/SoftwareVulnerabilitiesByMachine?deviceName"
+                            }
+                        },
+                        "Initialize_variable_for_custom_table_name":  {
+                            "runAfter":  {
+                            },
+                            "type":  "InitializeVariable",
+                            "inputs":  {
+                                "variables":  [
+                                    {
+                                        "name":  "LaCustomTableName",
+                                        "type":  "string",
+                                        "value":  "MDETVM"
+                                    }
+                                ]
+                            }
+                        },
+                        "Parse_JSON":  {
+                            "runAfter":  {
+                                "HTTP":  [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type":  "ParseJson",
+                            "inputs":  {
+                                "content":  "@body('HTTP')",
+                                "schema":  {
+                                    "type":  "object",
+                                    "value":  {
+                                        "items":  {
+                                            "properties":  {
+                                                "cveId":  {
+                                                    "type":  "string"
+                                                },
+                                                "cveMitigationStatus":  {
+                                                },
+                                                "cvssScore":  {
+                                                    "type":  "number"
+                                                },
+                                                "deviceId":  {
+                                                    "type":  "string"
+                                                },
+                                                "deviceName":  {
+                                                    "type":  "string"
+                                                },
+                                                "diskPaths":  {
+                                                    "items":  {
+                                                        "type":  "string"
+                                                    },
+                                                    "type":  "array"
+                                                },
+                                                "endOfSupportDate":  {
+                                                },
+                                                "endOfSupportStatus":  {
+                                                },
+                                                "exploitabilityLevel":  {
+                                                    "type":  "string"
+                                                },
+                                                "firstSeenTimestamp":  {
+                                                    "type":  "string"
+                                                },
+                                                "id":  {
+                                                    "type":  "string"
+                                                },
+                                                "lastSeenTimestamp":  {
+                                                    "type":  "string"
+                                                },
+                                                "osArchitecture":  {
+                                                    "type":  "string"
+                                                },
+                                                "osPlatform":  {
+                                                    "type":  "string"
+                                                },
+                                                "osVersion":  {
+                                                    "type":  "string"
+                                                },
+                                                "rbacGroupId":  {
+                                                    "type":  "integer"
+                                                },
+                                                "rbacGroupName":  {
+                                                    "type":  "string"
+                                                },
+                                                "recommendationReference":  {
+                                                    "type":  "string"
+                                                },
+                                                "recommendedSecurityUpdate":  {
+                                                    "type":  "string"
+                                                },
+                                                "recommendedSecurityUpdateId":  {
+                                                    "type":  "string"
+                                                },
+                                                "recommendedSecurityUpdateUrl":  {
+                                                    "type":  "string"
+                                                },
+                                                "registryPaths":  {
+                                                    "type":  "array"
+                                                },
+                                                "securityUpdateAvailable":  {
+                                                    "type":  "boolean"
+                                                },
+                                                "softwareName":  {
+                                                    "type":  "string"
+                                                },
+                                                "softwareVendor":  {
+                                                    "type":  "string"
+                                                },
+                                                "softwareVersion":  {
+                                                    "type":  "string"
+                                                },
+                                                "vulnerabilitySeverityLevel":  {
+                                                    "type":  "string"
+                                                }
+                                            },
+                                            "required":  [
+                                                "id",
+                                                "deviceId",
+                                                "rbacGroupId",
+                                                "rbacGroupName",
+                                                "deviceName",
+                                                "osPlatform",
+                                                "osVersion",
+                                                "osArchitecture",
+                                                "softwareVendor",
+                                                "softwareName",
+                                                "softwareVersion",
+                                                "cveId",
+                                                "vulnerabilitySeverityLevel",
+                                                "recommendedSecurityUpdate",
+                                                "recommendedSecurityUpdateId",
+                                                "recommendedSecurityUpdateUrl",
+                                                "diskPaths",
+                                                "registryPaths",
+                                                "lastSeenTimestamp",
+                                                "firstSeenTimestamp",
+                                                "endOfSupportStatus",
+                                                "endOfSupportDate",
+                                                "exploitabilityLevel",
+                                                "recommendationReference",
+                                                "cvssScore",
+                                                "securityUpdateAvailable",
+                                                "cveMitigationStatus"
+                                            ],
+                                            "type":  "object"
+                                        },
+                                        "type":  "array"
+                                    }
+                                }
+                            }
+                        },
+                        "Send_Data":  {
+                            "runAfter":  {
+                                "Parse_JSON":  [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type":  "ApiConnection",
+                            "inputs":  {
+                                "body":  "@{body('Parse_JSON')?['value']}",
+                                "headers":  {
+                                    "Log-Type":  "@variables('LaCustomTableName')"
+                                },
+                                "host":  {
+                                    "connection":  {
+                                        "name":  "@parameters('$connections')['azureloganalyticsdatacollector_1']['connectionId']"
+                                    }
+                                },
+                                "method":  "post",
+                                "path":  "/api/logs"
+                            }
+                        }
+                    },
+                    "outputs":  {
+                    }
+                },
+                "parameters":  {
+                    "$connections":  {
+                        "value":  {
+                            "azureloganalyticsdatacollector_1":  {
+                                "connectionId":  "[resourceId('Microsoft.Web/connections', variables('AzureloganalyticsdatacollectorConnectionName'))]",
+                                "connectionName":  "[variables('AzureloganalyticsdatacollectorConnectionName')]",
+                                "id":  "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Web/locations/', resourceGroup().location, '/managedApis/Azureloganalyticsdatacollector')]"
+                            }
+                        }
+                    }
+                }
+            },
+            "name":  "[parameters('PlaybookName')]",
+            "type":  "Microsoft.Logic/workflows",
+            "location":  "[resourceGroup().location]",
+            "tags":  {
+                "hidden-SentinelTemplateName":  "MDETVM",
+                "hidden-SentinelTemplateVersion":  "1.0"
+            },
+            "identity":  {
+                "type":  "SystemAssigned"
+            },
+            "apiVersion":  "2017-07-01",
+            "dependsOn":  [
+                "[resourceId('Microsoft.Web/connections', variables('AzureloganalyticsdatacollectorConnectionName'))]"
+            ]
+        },
+        {
+            "type":  "Microsoft.Web/connections",
+            "apiVersion":  "2016-06-01",
+            "name":  "[variables('AzureloganalyticsdatacollectorConnectionName')]",
+            "location":  "[resourceGroup().location]",
+            "kind":  "V1",
+            "properties":  {
+                "displayName":  "[variables('AzureloganalyticsdatacollectorConnectionName')]",
+                "customParameterValues":  {
+                },
+                "api":  {
+                    "id":  "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Web/locations/', resourceGroup().location, '/managedApis/Azureloganalyticsdatacollector')]"
+                }
+            }
+        }
+    ]
+}

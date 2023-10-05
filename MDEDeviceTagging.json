@@ -1,0 +1,178 @@
+{
+    "$schema":  "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion":  "1.0.0.0",
+    "metadata":  {
+        "title":  "",
+        "description":  "",
+        "prerequisites":  "",
+        "postDeployment":  [
+        ],
+        "prerequisitesDeployTemplateFile":  "",
+        "lastUpdateTime":  "",
+        "entities":  [
+        ],
+        "tags":  [
+        ],
+        "support":  {
+            "tier":  "community",
+            "armtemplate":  "Generated from https://github.com/Azure/Azure-Sentinel/tree/master/Tools/Playbook-ARM-Template-Generator"
+        },
+        "author":  {
+            "name":  ""
+        }
+    },
+    "parameters":  {
+        "PlaybookName":  {
+            "defaultValue":  "MDEDeviceTagging",
+            "type":  "string"
+        }
+    },
+    "variables":  {
+    },
+    "resources":  [
+        {
+            "properties":  {
+                "provisioningState":  "Succeeded",
+                "state":  "Enabled",
+                "definition":  {
+                    "$schema":  "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+                    "contentVersion":  "1.0.0.0",
+                    "parameters":  {
+                    },
+                    "triggers":  {
+                        "Recurrence":  {
+                            "recurrence":  {
+                                "frequency":  "Day",
+                                "interval":  1
+                            },
+                            "evaluatedRecurrence":  {
+                                "frequency":  "Day",
+                                "interval":  1
+                            },
+                            "type":  "Recurrence"
+                        }
+                    },
+                    "actions":  {
+                        "For-Each":  {
+                            "foreach":  "@body('ParseVariable')",
+                            "actions":  {
+                                "HTTPSetTag":  {
+                                    "runAfter":  {
+                                    },
+                                    "type":  "Http",
+                                    "inputs":  {
+                                        "authentication":  {
+                                            "audience":  "https://api-gcc.securitycenter.microsoft.us",
+                                            "type":  "ManagedServiceIdentity"
+                                        },
+                                        "body":  {
+                                            "Action":  "Add",
+                                            "Value":  "Testy"
+                                        },
+                                        "method":  "POST",
+                                        "uri":  "https://api-gcc.securitycenter.microsoft.us/api/machines/@{items('For-Each')['DeviceId']}/tags"
+                                    }
+                                }
+                            },
+                            "runAfter":  {
+                                "ParseVariable":  [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type":  "Foreach"
+                        },
+                        "HTTP-AHQuery":  {
+                            "runAfter":  {
+                            },
+                            "type":  "Http",
+                            "inputs":  {
+                                "authentication":  {
+                                    "audience":  "https://api-gcc.securitycenter.microsoft.us",
+                                    "type":  "ManagedServiceIdentity"
+                                },
+                                "body":  {
+                                    "Query":  "DeviceInfo | where Vendor contains 'sonos'  | distinct DeviceId"
+                                },
+                                "method":  "POST",
+                                "uri":  "https://api-gcc.securitycenter.microsoft.us/api/advancedqueries/run"
+                            }
+                        },
+                        "InitializeBodyFromParse":  {
+                            "runAfter":  {
+                                "ParseHTTP":  [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type":  "InitializeVariable",
+                            "inputs":  {
+                                "variables":  [
+                                    {
+                                        "name":  "testing",
+                                        "type":  "string",
+                                        "value":  "@{body('ParseHTTP')}"
+                                    }
+                                ]
+                            }
+                        },
+                        "ParseHTTP":  {
+                            "runAfter":  {
+                                "HTTP-AHQuery":  [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type":  "ParseJson",
+                            "inputs":  {
+                                "content":  "@body('HTTP-AHQuery')?['results']",
+                                "schema":  {
+                                    "DeviceId":  ""
+                                }
+                            }
+                        },
+                        "ParseVariable":  {
+                            "runAfter":  {
+                                "InitializeBodyFromParse":  [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type":  "ParseJson",
+                            "inputs":  {
+                                "content":  "@variables('testing')",
+                                "schema":  {
+                                    "items":  {
+                                        "properties":  {
+                                            "DeviceId":  {
+                                                "type":  "string"
+                                            }
+                                        },
+                                        "required":  [
+                                            "DeviceId"
+                                        ],
+                                        "type":  "object"
+                                    },
+                                    "type":  "array"
+                                }
+                            }
+                        }
+                    },
+                    "outputs":  {
+                    }
+                },
+                "parameters":  {
+                }
+            },
+            "name":  "[parameters('PlaybookName')]",
+            "type":  "Microsoft.Logic/workflows",
+            "location":  "[resourceGroup().location]",
+            "identity":  {
+                "type":  "SystemAssigned"
+            },
+            "tags":  {
+                "hidden-SentinelTemplateName":  "MDEDeviceTagging",
+                "hidden-SentinelTemplateVersion":  "1.0"
+            },
+            "apiVersion":  "2017-07-01",
+            "dependsOn":  [
+            ]
+        }
+    ]
+}

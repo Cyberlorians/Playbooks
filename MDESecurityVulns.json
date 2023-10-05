@@ -1,0 +1,403 @@
+{
+    "$schema":  "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion":  "1.0.0.0",
+    "metadata":  {
+        "title":  "",
+        "description":  "",
+        "prerequisites":  "",
+        "postDeployment":  [
+        ],
+        "prerequisitesDeployTemplateFile":  "",
+        "lastUpdateTime":  "",
+        "entities":  [
+        ],
+        "tags":  [
+        ],
+        "support":  {
+            "tier":  "community",
+            "armtemplate":  "Generated from https://github.com/Azure/Azure-Sentinel/tree/master/Tools/Playbook-ARM-Template-Generator"
+        },
+        "author":  {
+            "name":  ""
+        }
+    },
+    "parameters":  {
+        "PlaybookName":  {
+            "defaultValue":  "MDESeverityVulns",
+            "type":  "string"
+        }
+    },
+    "variables":  {
+        "AzureblobConnectionName":  "[concat('Azureblob-', parameters('PlaybookName'))]"
+    },
+    "resources":  [
+        {
+            "properties":  {
+                "provisioningState":  "Succeeded",
+                "state":  "Enabled",
+                "definition":  {
+                    "$schema":  "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+                    "contentVersion":  "1.0.0.0",
+                    "parameters":  {
+                        "$connections":  {
+                            "defaultValue":  {
+                            },
+                            "type":  "Object"
+                        }
+                    },
+                    "triggers":  {
+                        "Recurrence":  {
+                            "recurrence":  {
+                                "frequency":  "Day",
+                                "interval":  1
+                            },
+                            "evaluatedRecurrence":  {
+                                "frequency":  "Day",
+                                "interval":  1
+                            },
+                            "type":  "Recurrence"
+                        }
+                    },
+                    "actions":  {
+                        "CreateBlockBlobHigh":  {
+                            "runAfter":  {
+                                "ForEachHigh":  [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type":  "ApiConnection",
+                            "inputs":  {
+                                "body":  "@outputs('ComposeHigh')",
+                                "host":  {
+                                    "connection":  {
+                                        "name":  "@parameters('$connections')['azureblob_1']['connectionId']"
+                                    }
+                                },
+                                "method":  "post",
+                                "path":  "/v2/codeless/datasets/@{encodeURIComponent('https://gccaisa.blob.core.windows.net/')}/CreateBlockBlob",
+                                "queries":  {
+                                    "folderPath":  "/tvm",
+                                    "name":  "@{formatDateTime(convertTimeZone(utcnow(),'UTC','Eastern Standard Time'),'yyyy-MM-ddTHHmmss')}H.json"
+                                }
+                            },
+                            "runtimeConfiguration":  {
+                                "contentTransfer":  {
+                                    "transferMode":  "Chunked"
+                                }
+                            }
+                        },
+                        "CreateBlockBlobMedium":  {
+                            "runAfter":  {
+                                "ForEachMedium":  [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type":  "ApiConnection",
+                            "inputs":  {
+                                "body":  "@outputs('ComposeMedium')",
+                                "host":  {
+                                    "connection":  {
+                                        "name":  "@parameters('$connections')['azureblob_1']['connectionId']"
+                                    }
+                                },
+                                "method":  "post",
+                                "path":  "/v2/codeless/datasets/@{encodeURIComponent('https://gccaisa.blob.core.windows.net/')}/CreateBlockBlob",
+                                "queries":  {
+                                    "folderPath":  "/tvm",
+                                    "name":  "@{formatDateTime(convertTimeZone(utcnow(),'UTC','Eastern Standard Time'),'yyyy-MM-ddTHHmmss')}M.json"
+                                }
+                            },
+                            "runtimeConfiguration":  {
+                                "contentTransfer":  {
+                                    "transferMode":  "Chunked"
+                                }
+                            }
+                        },
+                        "ForEachHigh":  {
+                            "foreach":  "@body('ParseHigh')?['value']",
+                            "actions":  {
+                                "ComposeHigh":  {
+                                    "runAfter":  {
+                                    },
+                                    "type":  "Compose",
+                                    "inputs":  {
+                                        "CVEId":  "@{items('ForEachHigh')?['cveId']}",
+                                        "FixingKBId":  "@{items('ForEachHigh')?['fixingKbId']}",
+                                        "Id":  "@{items('ForEachHigh')?['id']}",
+                                        "MachineID":  "@{items('ForEachHigh')?['machineId']}",
+                                        "ProductName":  "@{items('ForEachHigh')?['productName']}",
+                                        "ProductVendor":  "@{items('ForEachHigh')?['productVendor']}",
+                                        "ProductVersion":  "@{items('ForEachHigh')?['productVersion']}",
+                                        "Severity":  "@{items('ForEachHigh')?['severity']}",
+                                        "TimeGenerated":  "@{formatDateTime(convertTimeZone(utcnow(),'UTC','Eastern Standard Time'),'yyyy-MM-ddTHHmm')}"
+                                    }
+                                }
+                            },
+                            "runAfter":  {
+                                "ParseHigh":  [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type":  "Foreach"
+                        },
+                        "ForEachMedium":  {
+                            "foreach":  "@body('ParseMedium')?['value']",
+                            "actions":  {
+                                "ComposeMedium":  {
+                                    "runAfter":  {
+                                    },
+                                    "type":  "Compose",
+                                    "inputs":  {
+                                        "CVEId":  "@{items('ForEachMedium')?['cveId']}",
+                                        "FixingKBId":  "@{items('ForEachMedium')?['fixingKbId']}",
+                                        "Id":  "@{items('ForEachMedium')?['id']}",
+                                        "MachineID":  "@{items('ForEachMedium')?['machineId']}",
+                                        "ProductName":  "@{items('ForEachMedium')?['productName']}",
+                                        "ProductVendor":  "@{items('ForEachMedium')?['productVendor']}",
+                                        "ProductVersion":  "@{items('ForEachMedium')?['productVersion']}",
+                                        "Severity":  "@{items('ForEachMedium')?['severity']}",
+                                        "TimeGenerated":  "@{formatDateTime(convertTimeZone(utcnow(),'UTC','Eastern Standard Time'),'yyyy-MM-ddTHHmm')}"
+                                    }
+                                }
+                            },
+                            "runAfter":  {
+                                "ParseMedium":  [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type":  "Foreach"
+                        },
+                        "HTTP-High":  {
+                            "runAfter":  {
+                                "InitializeAPICall-High":  [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type":  "Http",
+                            "inputs":  {
+                                "authentication":  {
+                                    "audience":  "https://api-gcc.securitycenter.microsoft.us",
+                                    "type":  "ManagedServiceIdentity"
+                                },
+                                "method":  "GET",
+                                "uri":  "@variables('InitializeAPICall-High')"
+                            }
+                        },
+                        "HTTP-Medium":  {
+                            "runAfter":  {
+                                "InitializeAPICall-Medium":  [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type":  "Http",
+                            "inputs":  {
+                                "authentication":  {
+                                    "audience":  "https://api-gcc.securitycenter.microsoft.us",
+                                    "type":  "ManagedServiceIdentity"
+                                },
+                                "method":  "GET",
+                                "uri":  "@variables('InitializeAPICall-Med')"
+                            }
+                        },
+                        "InitializeAPICall-High":  {
+                            "runAfter":  {
+                            },
+                            "type":  "InitializeVariable",
+                            "inputs":  {
+                                "variables":  [
+                                    {
+                                        "name":  "InitializeAPICall-High",
+                                        "type":  "string",
+                                        "value":  "https://api-gcc.securitycenter.microsoft.us/api/vulnerabilities/machinesVulnerabilities?$filter=Severity eq 'High'"
+                                    }
+                                ]
+                            }
+                        },
+                        "InitializeAPICall-Medium":  {
+                            "runAfter":  {
+                            },
+                            "type":  "InitializeVariable",
+                            "inputs":  {
+                                "variables":  [
+                                    {
+                                        "name":  "InitializeAPICall-Med",
+                                        "type":  "string",
+                                        "value":  "https://api-gcc.securitycenter.microsoft.us/api/vulnerabilities/machinesVulnerabilities?$filter=Severity eq 'Medium'"
+                                    }
+                                ]
+                            }
+                        },
+                        "ParseHigh":  {
+                            "runAfter":  {
+                                "HTTP-High":  [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type":  "ParseJson",
+                            "inputs":  {
+                                "content":  "@body('HTTP-High')",
+                                "schema":  {
+                                    "properties":  {
+                                        "@@odata.context":  {
+                                            "type":  "string"
+                                        },
+                                        "value":  {
+                                            "items":  {
+                                                "properties":  {
+                                                    "cveId":  {
+                                                        "type":  "string"
+                                                    },
+                                                    "fixingKbId":  {
+                                                    },
+                                                    "id":  {
+                                                        "type":  "string"
+                                                    },
+                                                    "machineId":  {
+                                                        "type":  "string"
+                                                    },
+                                                    "productName":  {
+                                                        "type":  "string"
+                                                    },
+                                                    "productVendor":  {
+                                                        "type":  "string"
+                                                    },
+                                                    "productVersion":  {
+                                                        "type":  "string"
+                                                    },
+                                                    "severity":  {
+                                                        "type":  "string"
+                                                    }
+                                                },
+                                                "required":  [
+                                                    "id",
+                                                    "cveId",
+                                                    "machineId",
+                                                    "fixingKbId",
+                                                    "productName",
+                                                    "productVendor",
+                                                    "productVersion",
+                                                    "severity"
+                                                ],
+                                                "type":  "object"
+                                            },
+                                            "type":  "array"
+                                        }
+                                    },
+                                    "type":  "object"
+                                }
+                            }
+                        },
+                        "ParseMedium":  {
+                            "runAfter":  {
+                                "HTTP-Medium":  [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type":  "ParseJson",
+                            "inputs":  {
+                                "content":  "@body('HTTP-Medium')",
+                                "schema":  {
+                                    "properties":  {
+                                        "@@odata.context":  {
+                                            "type":  "string"
+                                        },
+                                        "value":  {
+                                            "items":  {
+                                                "properties":  {
+                                                    "cveId":  {
+                                                        "type":  "string"
+                                                    },
+                                                    "fixingKbId":  {
+                                                    },
+                                                    "id":  {
+                                                        "type":  "string"
+                                                    },
+                                                    "machineId":  {
+                                                        "type":  "string"
+                                                    },
+                                                    "productName":  {
+                                                        "type":  "string"
+                                                    },
+                                                    "productVendor":  {
+                                                        "type":  "string"
+                                                    },
+                                                    "productVersion":  {
+                                                        "type":  "string"
+                                                    },
+                                                    "severity":  {
+                                                        "type":  "string"
+                                                    }
+                                                },
+                                                "required":  [
+                                                    "id",
+                                                    "cveId",
+                                                    "machineId",
+                                                    "fixingKbId",
+                                                    "productName",
+                                                    "productVendor",
+                                                    "productVersion",
+                                                    "severity"
+                                                ],
+                                                "type":  "object"
+                                            },
+                                            "type":  "array"
+                                        }
+                                    },
+                                    "type":  "object"
+                                }
+                            }
+                        }
+                    },
+                    "outputs":  {
+                    }
+                },
+                "parameters":  {
+                    "$connections":  {
+                        "value":  {
+                            "azureblob_1":  {
+                                "connectionId":  "[resourceId('Microsoft.Web/connections', variables('AzureblobConnectionName'))]",
+                                "connectionName":  "[variables('AzureblobConnectionName')]",
+                                "id":  "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Web/locations/', resourceGroup().location, '/managedApis/Azureblob')]",
+                                "connectionProperties":  {
+                                    "authentication":  {
+                                        "type":  "ManagedServiceIdentity"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "name":  "[parameters('PlaybookName')]",
+            "type":  "Microsoft.Logic/workflows",
+            "location":  "[resourceGroup().location]",
+            "tags":  {
+                "hidden-SentinelTemplateName":  "MDESeverityVulns",
+                "hidden-SentinelTemplateVersion":  "1.0"
+            },
+            "identity":  {
+                "type":  "SystemAssigned"
+            },
+            "apiVersion":  "2017-07-01",
+            "dependsOn":  [
+                "[resourceId('Microsoft.Web/connections', variables('AzureblobConnectionName'))]"
+            ]
+        },
+        {
+            "type":  "Microsoft.Web/connections",
+            "apiVersion":  "2016-06-01",
+            "name":  "[variables('AzureblobConnectionName')]",
+            "location":  "[resourceGroup().location]",
+            "kind":  "V1",
+            "properties":  {
+                "displayName":  "[variables('AzureblobConnectionName')]",
+                "customParameterValues":  {
+                },
+                "parameterValueType":  "Alternative",
+                "api":  {
+                    "id":  "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Web/locations/', resourceGroup().location, '/managedApis/Azureblob')]"
+                }
+            }
+        }
+    ]
+}
